@@ -16,7 +16,7 @@
 > To protect commercial competitive advantage and prevent unauthorized replication:
 > * **No raw training datasets, data curation scripts, or fine-tuning hyperparameters are published.**
 > * **No internal system prompts, model weights, or proprietary scoring algorithms are disclosed.**
-> * This repository provides an **In-Depth System Architecture Case Study & Engineering Whitepaper** focused exclusively on high-level reliability, distributed topology, security boundaries, and operational resilience.
+> * This repository provides an **In-Depth System Architecture Case Study & Engineering Whitepaper** focused on high-level reliability, distributed topology, security boundaries, and operational resilience.
 
 ---
 
@@ -30,20 +30,20 @@
 7. [07 — Omnichannel & Mobile Architecture](#07--omnichannel--mobile-architecture)
 8. [08 — Quality Assurance, i18n Auditing & CI/CD](#08--quality-assurance-i18n-auditing--cicd)
 9. [09 — Real Engineering Challenges & Trade-offs](#09--real-engineering-challenges--trade-offs)
-10. [10 — Production Metrics & Conclusions](#10--production-metrics--conclusions)
+10. [10 — Architectural Summary & Key Takeaways](#10--architectural-summary--key-takeaways)
 
 ---
 
 ## 01 — Executive Overview & Problem Domain
 
 ### The Problem Space
-Modern recruitment workflows rely heavily on automated **Applicant Tracking Systems (ATS)** to filter out over 75% of candidate resumes before human review. Candidates face three critical challenges:
-1. **The ATS Black Hole:** Unformatted resumes, missing keyword densities, or unstructured document parsing cause qualified candidates to be silently discarded.
-2. **Localization & Cross-Border Friction:** Tailoring resumes across diverse international markets (US Resume standards vs. European CV formats) requires localized terminology and cultural phrasing.
-3. **Inference Latency & AI Brittleness:** Most AI-powered tools suffer from frequent upstream provider rate limits, unpredictable latencies, and hallucinated unstructured output formats.
+Modern recruitment workflows rely heavily on automated **Applicant Tracking Systems (ATS)** to filter candidate resumes before human review. Candidates face three core friction points:
+1. **ATS Formatting Failures:** Incompatible document layouts, missing industry keywords, or non-standard document structures often cause qualified candidates to be filtered out automatically.
+2. **Localization Barriers:** Adapting resumes for international job markets (US one-page standard vs. detailed European CVs) requires culturally relevant phrasing and terminology.
+3. **Inference Latency & Provider Reliability:** Single-provider AI integrations frequently suffer from upstream rate limits, sporadic latency spikes, and unpredictable output structures.
 
 ### The Engineering Solution
-**ResumeAI** was architected as a high-reliability, multi-tenant career platform providing sub-second ATS semantic analysis, real-time multilingual resume tailoring across 10+ locales, and dual-mode vector PDF document compilation across both Web and native Android runtimes.
+**ResumeAI** was architected as a high-reliability, multi-tenant career platform designed for fast ATS semantic analysis, real-time multilingual resume customization across 10+ locales, and vector PDF document compilation across both Web and native Android environments.
 
 ---
 
@@ -91,17 +91,17 @@ flowchart TB
 ```
 
 ### Architectural Rationale: Edge-Modular Monolith
-Rather than introducing the operational overhead of dozens of standalone microservices for early growth stages, ResumeAI was built as an **Edge-Modular Monolith** using Next.js App Router:
-- **Server Actions & Edge Handlers:** Zero-latency direct database access via Supabase SSR client.
-- **Strict Boundary Decoupling:** Business domain logic (ATS scoring, PDF rendering, AI orchestration) is encapsulated in pure TypeScript services with zero UI coupling.
+Rather than introducing the operational complexity of distributed microservices prematurely, ResumeAI was built as an **Edge-Modular Monolith** using Next.js App Router:
+- **Direct Edge Access:** Low-latency database interactions via Supabase SSR client with connection pooling.
+- **Decoupled Domain Services:** Core business modules (ATS evaluation, document compilation, AI routing) are structured as isolated TypeScript services independent of the UI layer.
 
 ---
 
 ## 03 — AI Infrastructure & Multi-Model Orchestration
 
 ```
-User Request ──► Circuit Breaker ──► Primary: Google Gemini 2.0 Flash (Sub-300ms)
-                                           │ (On 429 Rate Limit / Timeout)
+User Request ──► Circuit Breaker ──► Primary: Google Gemini 2.0 Flash
+                                           │ (On Rate Limit / Timeout)
                                            ▼
                                      Fallback: Mistral Large / OpenAI
                                            │ (Enforced JSON Schema)
@@ -110,12 +110,12 @@ User Request ──► Circuit Breaker ──► Primary: Google Gemini 2.0 Flas
 ```
 
 ### 1. Multi-Provider Cascade Routing
-To guarantee 99.9% uptime during LLM provider degradation:
-- Primary inference routes through high-speed, cost-effective models (e.g., Gemini 2.0 Flash).
-- Automatic cascade failover to secondary providers (Mistral Large, OpenAI) upon upstream 429 errors or 6-second timeout thresholds.
+To maintain operational continuity during third-party AI outages:
+- Primary inference dispatches to fast, low-cost models (e.g., Gemini 2.0 Flash).
+- Automatic cascade failover routes requests to secondary providers (Mistral Large, OpenAI) upon rate-limit responses or execution timeouts.
 
 ### 2. Deterministic Structured Output
-All AI generation endpoints enforce runtime JSON schemas validated via `Zod`. If an LLM returns a malformed response, an automated repair pass executes before propagating data to the client document state.
+All AI generation endpoints enforce runtime JSON schemas validated with `Zod`. If an LLM returns malformed data, an automatic correction routine validates the structure before propagating state to the client.
 
 > *Note: Proprietary domain fine-tuning datasets, training parameters, loss functions, and model weights are retained strictly within private corporate infrastructure.*
 
@@ -124,28 +124,28 @@ All AI generation endpoints enforce runtime JSON schemas validated via `Zod`. If
 ## 04 — Persistence & Zero-Trust Data Layer
 
 ### Strict Row-Level Security (RLS)
-The database layer (Supabase / PostgreSQL) enforces strict multi-tenancy rules:
-- Users can **only** read and modify records where `auth.uid() = user_id`.
-- Even if an API endpoint logic were compromised, the database engine prohibits unauthorized cross-tenant reads or writes.
+The database layer (Supabase / PostgreSQL) enforces strict data isolation:
+- Database policies enforce `auth.uid() = user_id` on all customer tables.
+- Cross-tenant data access is blocked at the database engine level regardless of API handler logic.
 
 ### Reactive State Management
-Client document trees are synchronized using `Zustand` with optimistic updates, ensuring zero UI lag during intensive drag-and-drop section reordering (`@dnd-kit`).
+Client-side resume trees are synchronized with `Zustand`, enabling smooth drag-and-drop reordering (`@dnd-kit`) with optimistic state updates.
 
 ---
 
 ## 05 — Security, Authentication & Bot Defense
 
-- 🛡️ **Cloudflare Turnstile Bot Defense:** Every AI generation invocation requires a cryptographic Turnstile token verified server-side to prevent automated credit exhaustion.
-- 🔐 **Multi-Provider Auth:** Integrated OAuth (Google, Apple) and Magic Link email authentication via Supabase Auth with secure HTTP-only session cookies.
-- 🚫 **Zero-Secret Client Exposure:** All LLM API keys, service role keys, and payment webhooks execute strictly in isolated server runtimes.
+- 🛡️ **Cloudflare Turnstile Protection:** AI generation requests require a valid cryptographic Turnstile token verified server-side to protect compute budgets.
+- 🔐 **Multi-Provider Auth:** Integrated OAuth (Google, Apple) and email authentication managed through Supabase Auth with secure HTTP-only cookies.
+- 🚫 **Isolated Secrets:** API credentials, payment webhooks, and service role keys are strictly scoped to server execution environments.
 
 ---
 
 ## 06 — Performance & Edge Optimization
 
-- ⚡ **Dynamic Module Splitting:** Heavyweight client libraries (`pdfjs-dist`, `@react-pdf/renderer`, `mammoth`, `html2canvas`) are loaded on-demand via Next.js dynamic imports, maintaining a sub-120KB initial JS bundle.
-- 💨 **Edge Middleware Caching:** Static assets and public localized marketing pages are cached at global edge nodes via Vercel Edge Network.
-- 🔄 **Non-Blocking Background Tasks:** Automated daily SEO generation and multi-channel syndication run via asynchronous scheduled worker scripts.
+- ⚡ **Dynamic Module Splitting:** Heavy document parsers (`pdfjs-dist`, `@react-pdf/renderer`, `mammoth`) are loaded dynamically only when an export action is initiated, keeping the initial bundle size low.
+- 💨 **Edge Caching:** Static marketing pages and assets are cached globally on Vercel Edge Network.
+- 🔄 **Asynchronous Background Jobs:** Automated content generation and syndication scripts run out-of-band without impacting user-facing request latency.
 
 ---
 
@@ -158,8 +158,8 @@ Unified TypeScript Core
 └── ⚡ PWA (Serwist Offline Service Worker)
 ```
 
-- **Capacitor 8 Native Bridge:** Shares 100% of UI components and business logic with the web application while leveraging native Android storage, biometric authentication, and native sharing intents.
-- **Responsive Layout Engine:** Fluid adaptation between dual-pane desktop editor and single-pane mobile workflow.
+- **Capacitor 8 Bridge:** Reuses web components while accessing native Android capabilities such as storage, biometric authentication, and system share dialogs.
+- **Adaptive Interface:** Responsive layout shifts between a dual-pane editor on desktop and a focused single-column workflow on mobile.
 
 ---
 
@@ -169,37 +169,37 @@ Unified TypeScript Core
 Code Push ──► Static Lint & Typecheck ──► i18n Key Parity Audit ──► Vitest Unit Tests ──► Playwright E2E ──► Vercel Deploy
 ```
 
-### 1. Build-Time i18n Key Parity Audit
-Custom CI script (`check-i18n.js`) executes before every build. It scans all language bundles (`src/i18n/locales/*.json`) and verifies 100% key and nested object parity across all 10+ supported languages. Missing keys halt the CI pipeline immediately.
+### 1. Build-Time i18n Parity Audit
+A custom verification script (`check-i18n.js`) executes before every build, verifying key and structure parity across all language bundles (`src/i18n/locales/*.json`) to prevent missing translation regressions in production.
 
 ### 2. End-to-End Test Automation
-Comprehensive **Playwright** headless test suites simulate complete real-world user journeys: user login, resume template customization, AI bullet optimization, drag-and-drop sorting, and PDF vector export.
+Headless **Playwright** test suites simulate complete user journeys: authentication, resume editing, drag-and-drop reordering, AI enhancements, and PDF generation.
 
 ---
 
 ## 09 — Real Engineering Challenges & Trade-offs
 
-| Engineering Challenge | The Problem | Architectural Decision & Solution | Measured Result |
+| Engineering Challenge | The Problem | Architectural Decision & Solution | Outcome |
 | :--- | :--- | :--- | :--- |
-| **LLM Provider Instability** | Upstream rate limits & latency spikes caused intermittent 504 gateway timeouts. | Implemented multi-provider cascade router with exponential backoff and circuit breakers. | **99.95% AI pipeline reliability** across burst traffic. |
-| **ATS Parsing vs. Visual Design** | Complex CSS layouts fail when parsed by legacy corporate ATS scanners (Workday, Taleo). | Built dual-mode rendering: HTML5 Canvas for live WYSIWYG preview + vector `@react-pdf/renderer` for ATS-compliant PDF/A output. | **100% text-extractable, ATS-parsable** PDF exports. |
-| **10+ Locale State Sync** | Adding new features frequently caused missing translation keys and broken UI text in non-English locales. | Enforced automated build-time JSON schema parity validation in GitHub Actions CI. | **Zero missing translation bugs** in production releases. |
-| **Client Bundle Bloat** | PDF parsers and OCR modules inflated initial page load times on mobile networks. | Extracted document compilation to dynamic import chunks loaded only upon export modal trigger. | **65% reduction in initial bundle size** (sub-1.2s FCP on 4G). |
+| **Upstream AI Instability** | Intermittent rate limits and latency spikes from individual AI providers. | Multi-provider cascade router with exponential backoff and circuit breakers. | Continuous application availability during single-provider degradation. |
+| **ATS Parsing vs. Visual Design** | Complex CSS layouts fail when parsed by legacy ATS scanners (Workday, Taleo). | Dual-mode rendering: HTML5 Canvas for interactive preview + vector `@react-pdf/renderer` for export. | Searchable, well-structured text extraction in corporate ATS parsers. |
+| **Multilingual Consistency** | Adding new features frequently caused missing translation keys in non-English locales. | Enforced automated build-time JSON schema parity validation in CI pipeline. | Automated detection of missing keys before deployment. |
+| **Client Bundle Overhead** | Document compilation libraries inflated initial page load times on mobile. | Extracted export logic into dynamic import chunks loaded on demand. | Faster initial page rendering and reduced mobile data consumption. |
 
 ---
 
-## 10 — Production Metrics & Conclusions
+## 10 — Architectural Summary & Key Takeaways
 
-- ⚡ **Average ATS Analysis Latency:** < 850ms
-- 🌍 **Supported Locales:** 10+ fully synchronized language bundles
-- 📱 **Platforms Supported:** Web (Desktop/Mobile), Progressive Web App, Native Android (Capacitor)
-- 🔒 **Security Posture:** 100% RLS-enforced multi-tenancy, automated secret scanning, zero client token exposure
+- 🎯 **Reliability First:** Multi-model fallback architecture prevents downtime caused by third-party AI provider outages.
+- 🌍 **Localization Ready:** Comprehensive i18n architecture with build-time schema validation across 10+ languages.
+- 📱 **Cross-Platform Delivery:** Unified TypeScript codebase powering Web, PWA, and Android.
+- 🔒 **Defense in Depth:** Multi-tenant PostgreSQL with Row-Level Security, Turnstile bot defense, and server-side secret isolation.
 
 ---
 
 ## 🌐 Live Product & Inquiries
 * **Live Product:** [ResumeAI Platform](https://github.com/Vitalikdeve)
-* **Lead Architect:** [Vitalik Zelianko (@Vitalikdeve)](https://github.com/Vitalikdeve)
+* **Lead Developer:** [Vitalik Zelianko (@Vitalikdeve)](https://github.com/Vitalikdeve)
 * **Contact Email:** [VitaliZelianko@vitocv.com](mailto:VitaliZelianko@vitocv.com)
 
 ---
