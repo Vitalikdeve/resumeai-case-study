@@ -131,7 +131,7 @@ Code Commit
 ## 🌐 Live Product & Contact
 * **Live Application:** [ResumeAI Platform](https://github.com/Vitalikdeve)
 * **Lead Architect:** [Vitalik Zelianko (@Vitalikdeve)](https://github.com/Vitalikdeve)
-* **Email Inquiries:** [vitalikzelianko@gmail.com](mailto:vitalikzelianko@gmail.com)
+* **Email Inquiries:** [VitaliZelianko@vitocv.com](mailto:VitaliZelianko@vitocv.com)
 
 ---
 *Copyright © Vitalik Zelianko. All rights reserved. ResumeAI is a registered proprietary product.*
