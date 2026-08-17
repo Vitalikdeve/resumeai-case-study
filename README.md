@@ -10,8 +10,13 @@
 ---
 
 > [!IMPORTANT]
-> ### 🔒 Intellectual Property & Proprietary Notice
-> The complete source code, proprietary algorithms, database schemas, prompt engineering pipelines, and commercial infrastructure of **ResumeAI** are strictly proprietary trade secrets. This document serves as an **In-Depth System Architecture Case Study & Engineering Whitepaper** detailing the system design, core trade-offs, technical decisions, and operational benchmarks.
+> ### 🔒 Intellectual Property & Proprietary Trade Secret Notice
+> All underlying source code, **AI model training pipelines, domain fine-tuning datasets, model weights, loss configurations, prompt engineering orchestration**, proprietary scoring heuristics, database schemas, and commercial infrastructure of **ResumeAI** are strictly confidential, proprietary trade secrets.
+>
+> To protect commercial competitive advantage and prevent unauthorized replication:
+> * **No raw training datasets, data curation scripts, or fine-tuning hyperparameters are published.**
+> * **No internal system prompts, model weights, or proprietary scoring algorithms are disclosed.**
+> * This repository provides an **In-Depth System Architecture Case Study & Engineering Whitepaper** focused exclusively on high-level reliability, distributed topology, security boundaries, and operational resilience.
 
 ---
 
@@ -111,6 +116,8 @@ To guarantee 99.9% uptime during LLM provider degradation:
 
 ### 2. Deterministic Structured Output
 All AI generation endpoints enforce runtime JSON schemas validated via `Zod`. If an LLM returns a malformed response, an automated repair pass executes before propagating data to the client document state.
+
+> *Note: Proprietary domain fine-tuning datasets, training parameters, loss functions, and model weights are retained strictly within private corporate infrastructure.*
 
 ---
 
